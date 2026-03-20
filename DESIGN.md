@@ -7,6 +7,7 @@ A CLI tool written in Rust to perform full Android device backups and restores u
 ## Architecture
 
 ```mermaid
+%%{ init: { "theme": "dark" } }%%
 graph TB
     subgraph CLI Layer
         CLI[CLI - clap]
@@ -165,6 +166,7 @@ Options:
 ### Backup Flow
 
 ```mermaid
+%%{ init: { "theme": "dark" } }%%
 sequenceDiagram
     participant User
     participant CLI
@@ -184,6 +186,7 @@ sequenceDiagram
 ### Restore Flow
 
 ```mermaid
+%%{ init: { "theme": "dark" } }%%
 sequenceDiagram
     participant User
     participant CLI
