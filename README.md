@@ -149,6 +149,7 @@ android-backup verify <BACKUP_FILE>
 android-backup uses ADB to create Android backup archives (`.ab` files). These are tar archives compressed with gzip and optionally encrypted with AES-256-GCM.
 
 The tool stores metadata alongside each backup (`.ab_metadata.json`) containing:
+
 - Backup creation timestamp
 - Device information
 - Encryption details

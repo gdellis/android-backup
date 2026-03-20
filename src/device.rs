@@ -12,6 +12,7 @@ impl DeviceManager {
         Ok(Self { adb })
     }
 
+    #[allow(dead_code)]
     pub fn with_adb_path(path: std::path::PathBuf) -> Result<Self> {
         let adb = AdbCommand::with_path(path);
         Ok(Self { adb })
@@ -22,6 +23,7 @@ impl DeviceManager {
         Ok(devices)
     }
 
+    #[allow(dead_code)]
     pub fn find_device(&self, serial: Option<&str>) -> Result<AdbDevice> {
         let devices = self.list_devices()?;
 
@@ -54,14 +56,15 @@ impl DeviceManager {
                 if authorized.len() == 1 {
                     Ok(authorized.into_iter().next().unwrap())
                 } else {
-                    Err(AppError::Device(format!(
-                        "Multiple devices found. Please specify a device serial."
-                    )))
+                    Err(AppError::Device(
+                        "Multiple devices found. Please specify a device serial.".to_string(),
+                    ))
                 }
             }
         }
     }
 
+    #[allow(dead_code)]
     pub fn wait_for_device(&self, timeout_secs: u64) -> Result<AdbDevice> {
         use std::time::{Duration, Instant};
 
@@ -84,6 +87,7 @@ impl DeviceManager {
         Err(AppError::Timeout)
     }
 
+    #[allow(dead_code)]
     pub fn get_device_info(&self, serial: &str) -> Result<DeviceInfo> {
         let adb = AdbCommand::new()?.with_serial(serial.to_string());
         let devices = adb
@@ -100,6 +104,7 @@ impl DeviceManager {
         })
     }
 
+    #[allow(dead_code)]
     pub fn is_device_authorized(&self, serial: &str) -> Result<bool> {
         let devices = self.list_devices()?;
         Ok(devices
@@ -108,6 +113,7 @@ impl DeviceManager {
     }
 }
 
+#[allow(dead_code)]
 #[derive(Debug, Clone)]
 pub struct DeviceInfo {
     pub serial: String,

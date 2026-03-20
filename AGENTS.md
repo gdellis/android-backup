@@ -16,7 +16,7 @@ cargo fmt                     # Format code
 
 ## Project Structure
 
-```
+```text
 src/
 ├── main.rs      # Entry point, CLI setup, command handlers
 ├── cli.rs       # Clap CLI argument definitions
@@ -31,10 +31,12 @@ src/
 ## Code Style Reference
 
 See [.agents/rules/rust.md](.agents/rules/rust.md) for Rust guidelines:
+
 - Safety, strictness, modern idioms
 - Naming conventions, error handling, best practices
 
 See [.agents/rules/git.md](.agents/rules/git.md) for Git workflow:
+
 - Atomic commits, conventional commits format, branch naming
 
 See [.agents/rules/github.md](.agents/rules/github.md) for GitHub PR/issue workflow.
@@ -50,17 +52,19 @@ graph TD
     C --> D[adb backup]
 ```
 
-See [.agents/guides/documentation.md](.agents/guides/documentation.md) for API docs examples.
+See [.agents/guides/documentation.md](.agents/guides/documentation.md) for API examples.
 
 ## Project-Specific Guidelines
 
 ### ADB Integration
+
 - Always check `adb devices` before operations
 - Handle device authorization state explicitly
 - Use serial numbers for multi-device support
 - Parse output robustly - don't assume format
 
 ### Testing
+
 - Unit tests in `#[cfg(test)]` modules within source files
 - Integration tests in `tests/` directory
 - Use descriptive test names: `test_backup_creates_metadata_file`

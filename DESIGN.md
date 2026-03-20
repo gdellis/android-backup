@@ -39,6 +39,7 @@ A CLI tool written in Rust to perform full Android device backups and restores u
 ## Modules
 
 ### `adb.rs` - ADB Wrapper
+
 Wraps `adb` binary execution via `std::process::Command`.
 
 ```rust
@@ -58,6 +59,7 @@ impl AdbCommand {
 ```
 
 ### `backup.rs` - Backup Manager
+
 Manages backup creation, listing, and verification.
 
 ```rust
@@ -81,6 +83,7 @@ pub struct BackupMetadata {
 ```
 
 ### `restore.rs` - Restore Manager
+
 Manages restore operations and backup validation.
 
 ```rust
@@ -95,6 +98,7 @@ impl RestoreManager {
 ```
 
 ### `device.rs` - Device Manager
+
 Handles device detection and information.
 
 ```rust
@@ -115,12 +119,15 @@ pub struct AdbDevice {
 ```
 
 ### `crypto.rs` - Encryption
+
 AES-256-GCM encryption for backups. Currently scaffolding.
 
 ### `cli.rs` - CLI Definition
+
 Clap derive-based CLI with subcommands.
 
 ### `error.rs` - Error Types
+
 Custom error enum using thiserror.
 
 ## CLI Interface
@@ -145,6 +152,7 @@ Options:
 ## Data Flow
 
 ### Backup Flow
+
 ```
 User → handle_backup() → BackupManager.create_backup()
   → AdbCommand.backup() → adb backup -all -f output.ab
@@ -152,6 +160,7 @@ User → handle_backup() → BackupManager.create_backup()
 ```
 
 ### Restore Flow
+
 ```
 User → handle_restore() → RestoreManager.restore()
   → Validate backup file
@@ -162,6 +171,7 @@ User → handle_restore() → RestoreManager.restore()
 ## Future: Blinc UI Integration
 
 The plan includes adding a Blinc-based TUI for:
+
 - Interactive device selector
 - Backup progress view
 - Backup browser
@@ -185,6 +195,7 @@ The plan includes adding a Blinc-based TUI for:
 ## File Format
 
 Backups use Android Backup format (`.ab`):
+
 - `adb backup -all` creates tar/gzip stream
 - Optional AES-256 encryption
 - Metadata stored in separate `_metadata.json` sidecar file

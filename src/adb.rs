@@ -9,13 +9,14 @@ pub struct AdbCommand {
 }
 
 impl AdbCommand {
+    #[allow(dead_code)]
+    pub fn with_path(path: PathBuf) -> Self {
+        Self { path, serial: None }
+    }
+
     pub fn new() -> Result<Self> {
         let path = find_adb_path().ok_or(AppError::AdbNotFound)?;
         Ok(Self { path, serial: None })
-    }
-
-    pub fn with_path(path: PathBuf) -> Self {
-        Self { path, serial: None }
     }
 
     pub fn with_serial(mut self, serial: String) -> Self {
@@ -105,6 +106,7 @@ impl AdbCommand {
         Ok(())
     }
 
+    #[allow(dead_code)]
     pub fn version(&self) -> Result<String> {
         let output = self
             .cmd()
@@ -126,7 +128,7 @@ impl AdbCommand {
 }
 
 fn find_adb_path() -> Option<PathBuf> {
-    which_adb().or_else(|| fallback_adb_paths())
+    which_adb().or_else(fallback_adb_paths)
 }
 
 fn which_adb() -> Option<PathBuf> {

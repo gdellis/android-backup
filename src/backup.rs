@@ -56,6 +56,7 @@ impl BackupManager {
         Ok(metadata)
     }
 
+    #[allow(dead_code)]
     pub fn restore_backup(&self, backup_path: &str, password: Option<&str>) -> Result<()> {
         info!("Starting restore from: {}", backup_path);
 
@@ -69,6 +70,7 @@ impl BackupManager {
         Ok(())
     }
 
+    #[allow(dead_code)]
     pub fn verify_backup(&self, backup_path: &str) -> Result<BackupMetadata> {
         let path = PathBuf::from(backup_path);
         if !path.exists() {
@@ -109,13 +111,13 @@ impl BackupManager {
             let file_name = entry.file_name().to_string_lossy().to_string();
             if file_name.ends_with(".ab") {
                 let backup_path = entry.path();
-                let metadata_path = backup_path.with_extension("ab_metadata.json".to_string());
+                let metadata_path = backup_path.with_extension("ab_metadata.json");
 
                 let created_at = entry
                     .metadata()
                     .ok()
                     .and_then(|m| m.created().ok())
-                    .map(|t| DateTime::<Utc>::from(t))
+                    .map(DateTime::<Utc>::from)
                     .unwrap_or_else(Utc::now);
 
                 let size = fs::metadata(&backup_path).map(|m| m.len()).unwrap_or(0);
@@ -143,6 +145,7 @@ impl BackupManager {
         Ok(backups)
     }
 
+    #[allow(dead_code)]
     pub fn estimate_backup_size(&self) -> Result<u64> {
         let devices = self.adb.get_devices()?;
         if devices.is_empty() {
@@ -168,6 +171,7 @@ pub struct BackupMetadata {
 
 #[derive(Debug, Clone)]
 pub struct BackupInfo {
+    #[allow(dead_code)]
     pub path: String,
     pub name: String,
     pub created_at: DateTime<Utc>,

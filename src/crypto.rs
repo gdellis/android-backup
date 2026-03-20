@@ -8,13 +8,17 @@ use std::io::{Read, Write};
 
 use crate::error::{AppError, Result};
 
+#[allow(dead_code)]
 const NONCE_SIZE: usize = 12;
+#[allow(dead_code)]
 const KEY_SIZE: usize = 32;
 
+#[allow(dead_code)]
 pub struct BackupEncryptor {
     key: [u8; KEY_SIZE],
 }
 
+#[allow(dead_code)]
 impl BackupEncryptor {
     pub fn new(password: &str) -> Self {
         let key = derive_key(password);
@@ -76,6 +80,7 @@ impl BackupEncryptor {
     }
 }
 
+#[allow(dead_code)]
 fn derive_key(password: &str) -> [u8; KEY_SIZE] {
     use std::collections::hash_map::DefaultHasher;
     use std::hash::{Hash, Hasher};
@@ -110,12 +115,14 @@ fn derive_key(password: &str) -> [u8; KEY_SIZE] {
     final_key
 }
 
+#[allow(dead_code)]
 pub fn generate_random_key() -> [u8; KEY_SIZE] {
     let mut key = [0u8; KEY_SIZE];
     rand::thread_rng().fill(&mut key);
     key
 }
 
+#[allow(dead_code)]
 pub fn key_from_hex(hex_str: &str) -> Result<[u8; KEY_SIZE]> {
     let bytes = hex::decode(hex_str).map_err(|e| AppError::Encryption(e.to_string()))?;
 
