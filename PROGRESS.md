@@ -104,7 +104,7 @@
 
 - [x] Blinc UI framework integration
 - [x] Main window with navigation
-- [ ] Device selector view
+- [x] Device selector view
 - [ ] Backup configuration view
 - [ ] Restore browser view
 - [ ] Progress indicators
