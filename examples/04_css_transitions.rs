@@ -107,7 +107,8 @@ fn main() -> Result<()> {
             .child(
                 div()
                     .class("icon-box")
-                    .flex_center()
+                    .items_center()
+                    .justify_center()
                     .child(text("Icon").size(14.0).color(Color::WHITE)),
             )
     })

@@ -128,12 +128,14 @@ fn main() -> Result<()> {
                                     .child(
                                         div()
                                             .class("theme-btn")
-                                            .flex_center()
+                                            .items_center()
+            .justify_center()
                                             .child(text("Save Changes").size(14.0).weight(FontWeight::SemiBold).color(Color::WHITE)),
                                     )
                                     .child(
                                         div()
-                                            .flex_center()
+                                            .items_center()
+            .justify_center()
                                             .p(12.0)
                                             .child(text("Cancel").size(14.0).color(Color::rgba(0.6, 0.6, 0.6, 1.0))),
                                     ),
@@ -163,7 +165,7 @@ fn main() -> Result<()> {
                                     .flex_col()
                                     .gap(8.0)
                                     .child(
-                                        div().class("theme-btn").flex_center().child(
+                                        div().class("theme-btn").items_center().justify_center().child(
                                             text("Save Changes")
                                                 .size(14.0)
                                                 .weight(FontWeight::SemiBold)
@@ -171,7 +173,7 @@ fn main() -> Result<()> {
                                         ),
                                     )
                                     .child(
-                                        div().flex_center().p(12.0).child(
+                                        div().items_center().justify_center().p(12.0).child(
                                             text("Cancel")
                                                 .size(14.0)
                                                 .color(Color::rgba(0.6, 0.6, 0.6, 1.0)),

@@ -14,7 +14,8 @@ fn main() -> Result<()> {
         div()
             .w(ctx.width)
             .h(ctx.height)
-            .flex_center()
+            .items_center()
+            .justify_center()
             .bg(Color::rgba(0.05, 0.1, 0.2, 1.0))
             .child(
                 div()
@@ -23,7 +24,7 @@ fn main() -> Result<()> {
                     .p(48.0)
                     .flex_col()
                     .items_center()
-                    .gap(20.0)
+                    .gap(16.0)
                     .child(
                         text("Frosted Glass")
                             .size(32.0)
@@ -31,12 +32,12 @@ fn main() -> Result<()> {
                             .color(Color::WHITE),
                     )
                     .child(
-                        text("Glass material creates a beautiful")
+                        text("Glass material creates")
                             .size(16.0)
                             .color(Color::rgba(0.8, 0.8, 0.8, 1.0)),
                     )
                     .child(
-                        text("blur effect behind the element")
+                        text("a blur effect behind")
                             .size(16.0)
                             .color(Color::rgba(0.8, 0.8, 0.8, 1.0)),
                     ),

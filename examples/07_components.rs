@@ -54,7 +54,8 @@ fn card(title: &str, description: &str) -> impl ElementBuilder {
         })
         .child(
             div()
-                .flex_center()
+                .items_center()
+                .justify_center()
                 .w(48.0)
                 .h(48.0)
                 .bg(Color::rgba(0.3, 0.4, 0.6, 1.0))

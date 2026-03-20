@@ -69,7 +69,8 @@ fn main() -> Result<()> {
                                             .bg(Color::rgba(0.2, 0.5, 0.3, 1.0))
                                             .rounded(8.0)
                                             .p(16.0)
-                                            .flex_center()
+                                            .items_center()
+                                            .justify_center()
                                             .child(text("Item").size(14.0).color(Color::WHITE)),
                                     )
                                     .child(
@@ -77,7 +78,8 @@ fn main() -> Result<()> {
                                             .bg(Color::rgba(0.5, 0.3, 0.2, 1.0))
                                             .rounded(8.0)
                                             .p(16.0)
-                                            .flex_center()
+                                            .items_center()
+                                            .justify_center()
                                             .child(text("Stagger").size(14.0).color(Color::WHITE)),
                                     )
                                     .child(
@@ -85,7 +87,8 @@ fn main() -> Result<()> {
                                             .bg(Color::rgba(0.3, 0.4, 0.3, 1.0))
                                             .rounded(8.0)
                                             .p(16.0)
-                                            .flex_center()
+                                            .items_center()
+                                            .justify_center()
                                             .child(
                                                 text("Animation").size(14.0).color(Color::WHITE),
                                             ),

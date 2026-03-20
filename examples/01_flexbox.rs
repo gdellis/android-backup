@@ -37,7 +37,8 @@ fn main() -> Result<()> {
             )
             .child(
                 div()
-                    .flex_center()
+                    .items_center()
+                    .justify_center()
                     .w(300.0)
                     .h(120.0)
                     .bg(Color::rgba(0.3, 0.2, 0.4, 1.0))

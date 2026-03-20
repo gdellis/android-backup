@@ -52,7 +52,8 @@ fn main() -> Result<()> {
             .w(ctx.width)
             .h(ctx.height)
             .bg(Color::from_hex("#0f172a").unwrap())
-            .flex_center()
+            .items_center()
+            .justify_center()
             .child(
                 div()
                     .glass()
@@ -86,7 +87,8 @@ fn main() -> Result<()> {
                         div()
                             .class("app-btn-primary")
                             .p(16.0)
-                            .flex_center()
+                            .items_center()
+                            .justify_center()
                             .on_click(|_| println!("Create Backup clicked!"))
                             .child(
                                 text("Create Backup")
@@ -152,7 +154,8 @@ fn inc_button(count: &State<i32>, label: &str, delta: i32) -> impl ElementBuilde
         .rounded(12.0)
         .w(56.0)
         .h(56.0)
-        .flex_center()
+        .items_center()
+        .justify_center()
         .on_click(move |_| count.update(|v| v + delta))
         .child(
             text(label)
