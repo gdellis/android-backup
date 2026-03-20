@@ -2,7 +2,7 @@
 
 ## Overview
 
-A CLI tool written in Rust to perform full Android device backups and restores using ADB (Android Debug Bridge). Targets desktop environments (Linux, macOS, Windows).
+A Rust CLI tool to backup/restore Android devices via ADB. Targets Linux, macOS, Windows.
 
 ## Architecture
 
@@ -203,16 +203,127 @@ sequenceDiagram
     CLI-->>User: Restore successful
 ```
 
-## Future: Blinc UI Integration
+## Blinc UI Integration
 
-The plan includes adding a Blinc-based TUI for:
+The tool includes a graphical UI built with [Blinc](https://github.com/project-blinc/Blinc), a Rust-native UI framework with GPU-accelerated rendering, reactive signals, and CSS-based styling.
 
-- Interactive device selector
-- Backup progress view
-- Backup browser
-- Main menu navigation
+### UI Architecture
+
+```mermaid
+%%{ init: { "theme": "dark" } }%%
+graph TB
+    subgraph UI Layer
+        UI[UI Application]
+        W[Window Manager]
+        V[Views]
+    end
+
+    subgraph Views
+        DV[DeviceView]
+        BV[BackupView]
+        RV[RestoreView]
+        MV[MainView]
+    end
+
+    subgraph State
+        DS[DeviceState]
+        BS[BackupState]
+        RS[RestoreState]
+    end
+
+    UI --> W
+    W --> V
+    V --> DV
+    V --> BV
+    V --> RV
+    V --> MV
+
+    DV --> DS
+    BV --> BS
+    RV --> RS
+    BS --> BM[BackupManager]
+    RS --> RM[RestoreManager]
+    DS --> DM[DeviceManager]
+```
+
+### Window Structure
+
+| Window | Purpose |
+|--------|---------|
+| Main Window | Entry point with navigation menu |
+| Device Selector | Choose target device for operations |
+| Backup View | Select apps, configure options, initiate backup |
+| Restore View | Browse backups, select restore target |
+| Progress View | Real-time progress for ongoing operations |
+
+### State Management
+
+Blinc's reactive signals handle UI state:
+
+```rust
+// Device selection state
+let selected_device = ctx.use_state_keyed("selected_device", || None::<String>);
+
+// Backup progress state
+let backup_progress = ctx.use_state_keyed("backup_progress", || 0.0_f64);
+
+// Current view navigation
+let current_view = ctx.use_state_keyed("current_view", || View::Main);
+```
+
+### Dependencies (UI)
+
+| Crate | Purpose |
+|-------|---------|
+| blinc_app | Window management, event handling |
+| blinc_layout | Flexbox layout system |
+| blinc_animation | Spring animations, transitions |
+| blinc_core | Core components, signals |
+
+### CSS Styling
+
+Blinc supports CSS for theming:
+
+```css
+:root {
+    --bg-primary: #0f172a;
+    --bg-secondary: #1e293b;
+    --text-primary: #f8fafc;
+    --accent: #3b82f6;
+}
+
+.window {
+    background: var(--bg-primary);
+    border-radius: 16px;
+}
+
+.btn-primary {
+    background: var(--accent);
+    border-radius: 8px;
+    padding: 12px 24px;
+}
+```
+
+### Build Configuration
+
+```toml
+[dependencies]
+blinc_app = { git = "https://github.com/project-blinc/Blinc" }
+blinc_layout = { git = "https://github.com/project-blinc/Blinc" }
+blinc_animation = { git = "https://github.com/project-blinc/Blinc" }
+blinc_core = { git = "https://github.com/project-blinc/Blinc" }
+```
+
+### Running the UI
+
+```bash
+cargo run -- ui    # Launch graphical UI mode
+cargo run -- cli   # Launch CLI mode (default)
+```
 
 ## Dependencies
+
+### Core
 
 | Crate           | Purpose             |
 | :-------------- | :----------------- |
@@ -225,7 +336,16 @@ The plan includes adding a Blinc-based TUI for:
 | log/env_logger  | Logging            |
 | aes-gcm         | Encryption         |
 | flate2          | Compression        |
-| indicatif        | Progress bars      |
+| indicatif       | Progress bars      |
+
+### Blinc UI
+
+| Crate           | Purpose             |
+| :-------------- | :----------------- |
+| blinc_app       | Window management  |
+| blinc_layout    | Flexbox layout     |
+| blinc_animation | Spring animations  |
+| blinc_core      | Core components    |
 
 ## File Format
 

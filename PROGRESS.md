@@ -72,7 +72,8 @@
 
 ### CLI Features
 
-- [ ] Interactive device selector (TUI)
+- [x] Blinc UI framework integration
+- [ ] Interactive device selector (UI)
 - [ ] Backup browser UI (Blinc)
 - [ ] Configuration file support
 - [ ] Environment variable config
@@ -94,6 +95,19 @@
 - [ ] README.md
 - [ ] Man page
 - [ ] CLI documentation
+
+---
+
+## In Progress
+
+### Blinc UI Development
+
+- [x] Blinc UI framework integration
+- [ ] Main window with navigation
+- [ ] Device selector view
+- [ ] Backup configuration view
+- [ ] Restore browser view
+- [ ] Progress indicators
 
 ---
 

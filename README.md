@@ -29,7 +29,7 @@ The binary will be at `target/release/android-backup`.
 
 ### Pre-built Binaries
 
-Download pre-built binaries from the [releases page](#).
+Download pre-built binaries from the releases page.
 
 ## Quick Start
 
@@ -77,7 +77,7 @@ android-backup list ~/.local/share/android-backup/backups/
 
 ## CLI Reference
 
-```
+```text
 android-backup [OPTIONS] <COMMAND>
 ```
 
