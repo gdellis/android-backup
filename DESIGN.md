@@ -6,34 +6,45 @@ A CLI tool written in Rust to perform full Android device backups and restores u
 
 ## Architecture
 
-```
-┌─────────────────────────────────────────────────────────┐
-│                      CLI Layer                          │
-│                   (clap, main.rs)                      │
-└────────────────────────┬────────────────────────────────┘
-                         │
-┌────────────────────────▼────────────────────────────────┐
-│                   Command Handlers                       │
-│         handle_backup, handle_restore, etc.              │
-└────────────────────────┬────────────────────────────────┘
-                         │
-        ┌────────────────┼────────────────┐
-        │                │                │
-┌───────▼──────┐ ┌───────▼──────┐ ┌─────▼─────┐
-│   AdbCommand │ │BackupManager │ │Restoremgr │
-│              │ │              │ │           │
-│ - devices    │ │ - create     │ │ - restore │
-│ - backup     │ │ - list       │ │ - validate│
-│ - restore    │ │ - verify     │ │           │
-└──────────────┘ └──────────────┘ └───────────┘
-        │                │                │
-        └────────────────┼────────────────┘
-                         │
-              ┌──────────▼──────────┐
-              │     AdbCommand      │
-              │  (std::process::Command) │
-              └─────────────────────┘
+```mermaid
+graph TB
+    subgraph CLI Layer
+        CLI[CLI - clap]
+    end
 
+    subgraph Command Handlers
+        HB[handle_backup]
+        HR[handle_restore]
+        HD[handle_devices]
+        HL[handle_list]
+        HV[handle_verify]
+    end
+
+    subgraph Managers
+        BM[BackupManager]
+        RM[RestoreManager]
+        DM[DeviceManager]
+    end
+
+    subgraph ADB Wrapper
+        AC[AdbCommand]
+    end
+
+    CLI --> HB
+    CLI --> HR
+    CLI --> HD
+    CLI --> HL
+    CLI --> HV
+
+    HB --> BM
+    HR --> RM
+    HD --> DM
+
+    BM --> AC
+    RM --> AC
+    DM --> AC
+
+    AC --> ADB[adb binary]
 ```
 
 ## Modules
@@ -132,7 +143,7 @@ Custom error enum using thiserror.
 
 ## CLI Interface
 
-```
+```text
 android-backup [OPTIONS] <COMMAND>
 
 Commands:
@@ -153,19 +164,40 @@ Options:
 
 ### Backup Flow
 
-```
-User → handle_backup() → BackupManager.create_backup()
-  → AdbCommand.backup() → adb backup -all -f output.ab
-  → Write metadata JSON → Done
+```mermaid
+sequenceDiagram
+    participant User
+    participant CLI
+    participant BackupManager
+    participant AdbCommand
+    participant ADB
+
+    User->>CLI: android-backup backup
+    CLI->>BackupManager: create_backup()
+    BackupManager->>AdbCommand: backup()
+    AdbCommand->>ADB: adb backup -all -f output.ab
+    ADB-->>User: Backup complete on device
+    BackupManager->>FS: Write metadata.json
+    CLI-->>User: Backup saved
 ```
 
 ### Restore Flow
 
-```
-User → handle_restore() → RestoreManager.restore()
-  → Validate backup file
-  → AdbCommand.restore() → adb restore backup.ab
-  → Done
+```mermaid
+sequenceDiagram
+    participant User
+    participant CLI
+    participant RestoreManager
+    participant AdbCommand
+    participant ADB
+
+    User->>CLI: android-backup restore backup.ab
+    CLI->>RestoreManager: restore()
+    RestoreManager->>RestoreManager: validate_backup()
+    RestoreManager->>AdbCommand: restore()
+    AdbCommand->>ADB: adb restore backup.ab
+    ADB-->>User: Restore complete on device
+    CLI-->>User: Restore successful
 ```
 
 ## Future: Blinc UI Integration
@@ -179,18 +211,18 @@ The plan includes adding a Blinc-based TUI for:
 
 ## Dependencies
 
-| Crate | Purpose |
-|-------|---------|
-| clap | CLI parsing |
-| serde | Serialization |
-| anyhow | Error handling |
-| thiserror | Error enums |
-| chrono | Date/time |
-| dirs | Platform dirs |
-| log/env_logger | Logging |
-| aes-gcm | Encryption |
-| flate2 | Compression |
-| indicatif | Progress bars |
+| Crate           | Purpose             |
+| :-------------- | :----------------- |
+| clap            | CLI parsing        |
+| serde           | Serialization      |
+| anyhow          | Error handling     |
+| thiserror       | Error enums        |
+| chrono          | Date/time          |
+| dirs            | Platform dirs      |
+| log/env_logger  | Logging            |
+| aes-gcm         | Encryption         |
+| flate2          | Compression        |
+| indicatif        | Progress bars      |
 
 ## File Format
 
