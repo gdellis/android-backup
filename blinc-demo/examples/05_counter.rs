@@ -1,6 +1,6 @@
 use blinc_app::prelude::*;
-use blinc_app::windowed::{WindowedApp, WindowedContext};
-use blinc_core::{BlincContextState, Color};
+use blinc_app::windowed::WindowedApp;
+use blinc_core::{BlincContextState, Color, State};
 use blinc_layout::stateful::stateful;
 
 fn main() -> Result<()> {
@@ -19,7 +19,9 @@ fn main() -> Result<()> {
             .w(ctx.width)
             .h(ctx.height)
             .bg(Color::rgba(0.1, 0.1, 0.15, 1.0))
-            .flex_center()
+            .flex_col()
+            .items_center()
+            .justify_center()
             .child(
                 div()
                     .glass()
@@ -62,7 +64,8 @@ fn main() -> Result<()> {
                         div()
                             .p(12.0)
                             .on_click(|_| {
-                                BlincContextState::get().update(count, |v| *v = 0);
+                                let c = count;
+                                c.set(0);
                             })
                             .child(
                                 text("Reset")
@@ -80,9 +83,13 @@ fn counter_btn(count: &State<i32>, label: &str, delta: i32, bg: Color) -> impl E
         .rounded(12.0)
         .w(64.0)
         .h(64.0)
-        .flex_center()
+        .flex_col()
+        .items_center()
+        .justify_center()
         .on_click(move |_| {
-            BlincContextState::get().update(count, |v| *v = *v + delta);
+            let c = count.clone();
+            let d = delta;
+            c.set(c.get() + d);
         })
         .child(
             text(label)

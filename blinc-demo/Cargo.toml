@@ -1,0 +1,10 @@
+[package]
+name = "blinc-demo"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+blinc_app = { path = "/home/glenn/.cargo/git/checkouts/blinc-69f63bbdea5129d2/da94546/crates/blinc_app" }
+blinc_animation = { path = "/home/glenn/.cargo/git/checkouts/blinc-69f63bbdea5129d2/da94546/crates/blinc_animation" }
+blinc_layout = { path = "/home/glenn/.cargo/git/checkouts/blinc-69f63bbdea5129d2/da94546/crates/blinc_layout" }
+blinc_core = { path = "/home/glenn/.cargo/git/checkouts/blinc-69f63bbdea5129d2/da94546/crates/blinc_core" }
