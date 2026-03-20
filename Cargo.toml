@@ -4,12 +4,16 @@ version = "0.1.0"
 edition = "2021"
 description = "A Rust tool to backup and restore Android devices using ADB"
 license = "MIT"
-repository = "https://github.com/example/android-backup"
+repository = "https://github.com/gdellis/android-backup"
 authors = ["Developer"]
 
 [[bin]]
 name = "android-backup"
 path = "src/main.rs"
+
+[features]
+default = []
+blinc-ui = ["blinc_app", "blinc_layout", "blinc_core", "blinc_animation", "blinc_theme"]
 
 [dependencies]
 clap = { version = "4.5", features = ["derive", "env"] }
@@ -28,6 +32,11 @@ dirs = "5.0"
 log = "0.4"
 env_logger = "0.11"
 thiserror = "1.0"
+blinc_app = { version = "0.1", optional = true }
+blinc_layout = { version = "0.1", optional = true }
+blinc_core = { version = "0.1", optional = true }
+blinc_animation = { version = "0.1", optional = true }
+blinc_theme = { version = "0.1", optional = true }
 
 [target.'cfg(windows)'.dependencies]
 winapi = { version = "0.3", features = ["winuser"] }

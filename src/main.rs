@@ -5,6 +5,8 @@ mod crypto;
 mod device;
 mod error;
 mod restore;
+#[cfg(feature = "blinc-ui")]
+mod ui;
 
 use anyhow::Result;
 use log::{error, info, LevelFilter};
@@ -176,6 +178,17 @@ fn handle_verify(backup_file: &str) -> Result<()> {
     Ok(())
 }
 
+#[cfg(feature = "blinc-ui")]
+fn handle_ui() -> anyhow::Result<()> {
+    use crate::ui;
+    ui::run_ui().map_err(|e| anyhow::anyhow!("UI error: {}", e))
+}
+
+#[cfg(not(feature = "blinc-ui"))]
+fn handle_ui() -> anyhow::Result<()> {
+    anyhow::bail!("UI support not enabled. Rebuild with --features blinc-ui")
+}
+
 fn main() {
     let cli = Cli::parse_args();
     init_logging(cli.verbose);
@@ -203,6 +216,7 @@ fn main() {
             println!("Please install ADB manually: https://developer.android.com/studio/releases/platform-tools");
             Ok(())
         }
+        cli::Commands::Ui => handle_ui(),
     };
 
     if let Err(e) = result {

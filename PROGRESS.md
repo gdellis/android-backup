@@ -103,7 +103,7 @@
 ### Blinc UI Development
 
 - [x] Blinc UI framework integration
-- [ ] Main window with navigation
+- [x] Main window with navigation
 - [ ] Device selector view
 - [ ] Backup configuration view
 - [ ] Restore browser view

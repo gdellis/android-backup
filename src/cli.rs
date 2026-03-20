@@ -65,6 +65,7 @@ pub enum Commands {
         #[arg(short, long, help = "Install directory")]
         install_dir: Option<PathBuf>,
     },
+    Ui,
 }
 
 impl Cli {
