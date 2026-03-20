@@ -1,0 +1,37 @@
+[package]
+name = "android-backup"
+version = "0.1.0"
+edition = "2021"
+description = "A Rust tool to backup and restore Android devices using ADB"
+license = "MIT"
+repository = "https://github.com/example/android-backup"
+authors = ["Developer"]
+
+[[bin]]
+name = "android-backup"
+path = "src/main.rs"
+
+[dependencies]
+clap = { version = "4.5", features = ["derive", "env"] }
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+anyhow = "1.0"
+tokio = { version = "1.0", features = ["full"] }
+indicatif = "0.17"
+aes-gcm = "0.10"
+rand = "0.8"
+flate2 = "1.0"
+tar = "0.4"
+hex = "0.4"
+chrono = { version = "0.4", features = ["serde"] }
+dirs = "5.0"
+log = "0.4"
+env_logger = "0.11"
+thiserror = "1.0"
+
+[target.'cfg(windows)'.dependencies]
+winapi = { version = "0.3", features = ["winuser"] }
+
+[profile.release]
+opt-level = 3
+lto = true
