@@ -109,7 +109,7 @@
 - [x] Device selector view
 - [x] Backup configuration view
 - [x] Restore browser view
-- [ ] Progress indicators
+- [x] Progress indicators
 
 ---
 
