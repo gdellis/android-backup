@@ -76,6 +76,7 @@
 - [x] Blinc UI framework integration
 - [x] Interactive device selector (UI)
 - [x] Backup browser UI (Blinc)
+- [x] Restore browser UI (Blinc)
 - [ ] Configuration file support
 - [ ] Environment variable config
 
@@ -107,7 +108,7 @@
 - [x] Main window with navigation
 - [x] Device selector view
 - [x] Backup configuration view
-- [ ] Restore browser view
+- [x] Restore browser view
 - [ ] Progress indicators
 
 ---
