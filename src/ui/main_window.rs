@@ -1,10 +1,20 @@
 use crate::adb::{AdbDevice, DeviceState};
 use crate::backup::BackupManager;
 use crate::device::DeviceManager;
+use crate::restore::RestoreManager;
 use blinc_app::prelude::*;
 use blinc_app::windowed::{WindowedApp, WindowedContext};
 use blinc_core::Color;
 use std::path::PathBuf;
+
+#[derive(Debug, Clone)]
+pub struct BackupListItem {
+    pub name: String,
+    pub path: String,
+    pub size_bytes: u64,
+    pub created_at: String,
+    pub backup_type: String,
+}
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub enum NavItem {
@@ -37,6 +47,13 @@ fn build_ui(ctx: &mut WindowedContext) -> impl ElementBuilder {
     let backup_apk = ctx.use_state_keyed("backup_apk", || false);
     let backup_compress = ctx.use_state_keyed("backup_compress", || true);
     let backup_output = ctx.use_state_keyed("backup_output", get_default_backup_dir);
+
+    let restore_directory = ctx.use_state_keyed("restore_directory", get_default_backup_dir);
+    let restore_files = ctx.use_state_keyed::<Vec<BackupListItem>, _>("restore_files", Vec::new);
+    let selected_backup = ctx.use_state_keyed::<Option<String>, _>("selected_backup", || None);
+    let is_restoring = ctx.use_state_keyed("is_restoring", || false);
+    let restore_success = ctx.use_state_keyed("restore_success", || false);
+    let restore_error = ctx.use_state_keyed::<Option<String>, _>("restore_error", || None);
 
     static CSS_LOADED: std::sync::OnceLock<()> = std::sync::OnceLock::new();
 
@@ -248,6 +265,80 @@ fn build_ui(ctx: &mut WindowedContext) -> impl ElementBuilder {
                 color: #94a3b8;
                 font-size: 14px;
                 text-align: center;
+            }
+            #restore-view {
+                width: 100%;
+                height: 100%;
+                display: flex;
+                flex-direction: column;
+                padding: 24px;
+                gap: 24px;
+                overflow-y: auto;
+            }
+            #restore-header {
+                display: flex;
+                flex-direction: column;
+                gap: 8px;
+            }
+            #restore-title {
+                font-size: 24px;
+                font-weight: 700;
+                color: #f8fafc;
+            }
+            #restore-subtitle {
+                font-size: 14px;
+                color: #64748b;
+            }
+            .backup-list {
+                display: flex;
+                flex-direction: column;
+                gap: 12px;
+            }
+            .backup-item {
+                background: #1e293b;
+                border-radius: 12px;
+                padding: 16px 20px;
+                cursor: pointer;
+                border: 2px solid transparent;
+            }
+            .backup-item:hover {
+                border-color: #475569;
+            }
+            .backup-item.selected {
+                border-color: #3b82f6;
+                background: #1e3a5f;
+            }
+            .backup-item-name {
+                font-size: 16px;
+                font-weight: 600;
+                color: #f8fafc;
+                margin-bottom: 4px;
+            }
+            .backup-item-meta {
+                font-size: 12px;
+                color: #64748b;
+                display: flex;
+                gap: 16px;
+            }
+            #start-restore-btn {
+                padding: 14px 24px;
+                background: #3b82f6;
+                border-radius: 8px;
+                color: white;
+                font-size: 16px;
+                font-weight: 600;
+                cursor: pointer;
+                text-align: center;
+            }
+            #start-restore-btn:hover {
+                background: #2563eb;
+            }
+            #success-banner {
+                background: #166534;
+                color: #86efac;
+                padding: 16px 20px;
+                border-radius: 8px;
+                font-size: 14px;
             }
             "#,
         );
@@ -501,15 +592,165 @@ fn build_ui(ctx: &mut WindowedContext) -> impl ElementBuilder {
                 .child(text("Start Backup")),
         );
 
+    let selected = selected_backup.get();
+    let restoring = is_restoring.get();
+    let restore_err = restore_error.get();
+    let restore_dir = restore_directory.get();
+
+    {
+        let restore_files = restore_files.clone();
+        let restore_error = restore_error.clone();
+        let restore_directory = restore_directory.clone();
+        let load_fn = move || {
+            restore_error.set(None);
+            let dir = restore_directory.get();
+            match BackupManager::list_backups(&dir) {
+                Ok(backups) => {
+                    let items: Vec<BackupListItem> = backups
+                        .into_iter()
+                        .map(|b| BackupListItem {
+                            name: b.name,
+                            path: b.path,
+                            size_bytes: b.size_bytes,
+                            created_at: b.created_at.format("%Y-%m-%d %H:%M").to_string(),
+                            backup_type: b
+                                .metadata
+                                .map(|m| m.backup_type)
+                                .unwrap_or_else(|| "unknown".to_string()),
+                        })
+                        .collect();
+                    restore_files.set(items);
+                }
+                Err(e) => {
+                    restore_error.set(Some(e.to_string()));
+                }
+            }
+        };
+        load_fn();
+    }
+
+    let restore_files_list = restore_files.get();
+
+    let mut backup_items = div().class("backup-list");
+    for item in &restore_files_list {
+        let is_selected = selected.as_deref() == Some(&item.path);
+        let path = item.path.clone();
+        let path_clone = path.clone();
+        let selected_backup_clone = selected_backup.clone();
+
+        let size_mb = item.size_bytes as f64 / (1024.0 * 1024.0);
+
+        backup_items = backup_items.child(
+            div()
+                .class(if is_selected {
+                    "backup-item selected"
+                } else {
+                    "backup-item"
+                })
+                .on_click(move |_ctx| {
+                    selected_backup_clone.set(Some(path_clone.clone()));
+                })
+                .flex_col()
+                .child(text(&item.name))
+                .child(
+                    div()
+                        .class("backup-item-meta")
+                        .child(text(format!("{:.2} MB", size_mb)))
+                        .child(text(&item.created_at))
+                        .child(text(&item.backup_type)),
+                ),
+        );
+    }
+
     let restore_content = div()
+        .id("restore-view")
         .flex_col()
-        .items_center()
-        .justify_center()
-        .child(text("🔄 Restore View").size(24.0).color(Color::WHITE))
         .child(
-            text("Restore from backup files")
-                .size(14.0)
-                .color(Color::rgb(0.5, 0.5, 0.5)),
+            div()
+                .id("restore-header")
+                .child(text("Restore Backup").id("restore-title"))
+                .child(text("Select a backup to restore to your device").id("restore-subtitle")),
+        )
+        .child(
+            div()
+                .class("config-section")
+                .flex_col()
+                .child(div().child(text("Backup Location")))
+                .child(text(&restore_dir).color(Color::rgb(0.4, 0.4, 0.4))),
+        )
+        .child(
+            div()
+                .class("config-section")
+                .flex_col()
+                .child(div().child(text("Available Backups")))
+                .child(
+                    div()
+                        .class("backup-list")
+                        .child(if restore_files_list.is_empty() {
+                            div()
+                                .class("placeholder-card")
+                                .child(text("No backups found. Create a backup first."))
+                        } else {
+                            backup_items
+                        }),
+                ),
+        )
+        .child(
+            div()
+                .id("error-banner")
+                .child(text(restore_err.as_deref().unwrap_or("Unknown error"))),
+        )
+        .child(
+            div()
+                .id("start-restore-btn")
+                .on_click({
+                    let selected = selected_backup.clone();
+                    let selected_serial = selected_serial.clone();
+                    let is_restoring = is_restoring.clone();
+                    let restore_success = restore_success.clone();
+                    let restore_error = restore_error.clone();
+                    move |_ctx| {
+                        let backup_path = selected.get();
+                        let serial = selected_serial.get();
+
+                        if backup_path.is_none() {
+                            restore_error.set(Some("Please select a backup first".to_string()));
+                            return;
+                        }
+                        if serial.is_none() {
+                            restore_error.set(Some("Please select a device first".to_string()));
+                            return;
+                        }
+
+                        let backup_path = backup_path.unwrap();
+                        let serial = serial.unwrap();
+
+                        is_restoring.set(true);
+                        restore_error.set(None);
+
+                        match RestoreManager::with_serial(serial.clone()) {
+                            Ok(manager) => match manager.restore(&backup_path, None) {
+                                Ok(_) => {
+                                    is_restoring.set(false);
+                                    restore_success.set(true);
+                                }
+                                Err(e) => {
+                                    is_restoring.set(false);
+                                    restore_error.set(Some(e.to_string()));
+                                }
+                            },
+                            Err(e) => {
+                                is_restoring.set(false);
+                                restore_error.set(Some(e.to_string()));
+                            }
+                        }
+                    }
+                })
+                .child(text(if restoring {
+                    "Restoring..."
+                } else {
+                    "Start Restore"
+                })),
         );
 
     let settings_content = div()
