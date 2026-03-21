@@ -481,7 +481,7 @@ fn build_ui(ctx: &mut WindowedContext) -> impl ElementBuilder {
         .child(
             div()
                 .id("error-banner")
-                .child(text(error.as_deref().unwrap_or("Unknown error"))),
+                .child(text(error.as_deref().unwrap_or(""))),
         )
         .child(device_cards);
 
@@ -667,7 +667,6 @@ fn build_ui(ctx: &mut WindowedContext) -> impl ElementBuilder {
 
     let selected = selected_backup.get();
     let restoring = is_restoring.get();
-    let restore_err = restore_error.get();
     let restore_dir = restore_directory.get();
 
     {
@@ -771,7 +770,7 @@ fn build_ui(ctx: &mut WindowedContext) -> impl ElementBuilder {
         .child(
             div()
                 .id("error-banner")
-                .child(text(restore_err.as_deref().unwrap_or("Unknown error"))),
+                .child(text(restore_error.get().as_deref().unwrap_or(""))),
         )
         .child(
             div()
