@@ -47,6 +47,9 @@ fn build_ui(ctx: &mut WindowedContext) -> impl ElementBuilder {
     let backup_apk = ctx.use_state_keyed("backup_apk", || false);
     let backup_compress = ctx.use_state_keyed("backup_compress", || true);
     let backup_output = ctx.use_state_keyed("backup_output", get_default_backup_dir);
+    let is_backuping = ctx.use_state_keyed("is_backuping", || false);
+    let backup_success = ctx.use_state_keyed("backup_success", || false);
+    let backup_error = ctx.use_state_keyed::<Option<String>, _>("backup_error", || None);
 
     let restore_directory = ctx.use_state_keyed("restore_directory", get_default_backup_dir);
     let restore_files = ctx.use_state_keyed::<Vec<BackupListItem>, _>("restore_files", Vec::new);
@@ -340,6 +343,34 @@ fn build_ui(ctx: &mut WindowedContext) -> impl ElementBuilder {
                 border-radius: 8px;
                 font-size: 14px;
             }
+            .progress-container {
+                background: #1e293b;
+                border-radius: 12px;
+                padding: 20px;
+                display: flex;
+                flex-direction: column;
+                gap: 12px;
+            }
+            .progress-label {
+                font-size: 14px;
+                color: #e2e8f0;
+                font-weight: 500;
+            }
+            .progress-bar {
+                background: #334155;
+                height: 8px;
+                border-radius: 4px;
+                overflow: hidden;
+            }
+            .progress-fill {
+                background: #3b82f6;
+                height: 100%;
+                border-radius: 4px;
+                transition: width 300ms ease;
+            }
+            .progress-fill.complete {
+                background: #22c55e;
+            }
             "#,
         );
     });
@@ -396,6 +427,7 @@ fn build_ui(ctx: &mut WindowedContext) -> impl ElementBuilder {
     let apk = backup_apk.get();
     let compress = backup_compress.get();
     let output_dir = backup_output.get();
+    let is_backuping_val = is_backuping.get();
 
     let mut device_cards = div().id("device-list").flex_col();
     for device in &device_list {
@@ -547,17 +579,44 @@ fn build_ui(ctx: &mut WindowedContext) -> impl ElementBuilder {
         )
         .child(
             div()
+                .class("progress-container")
+                .flex_col()
+                .child(
+                    div()
+                        .class("progress-label")
+                        .child(text(if is_backuping_val {
+                            "Backing up..."
+                        } else {
+                            "Ready to backup"
+                        })),
+                )
+                .child(
+                    div().class("progress-bar").child(
+                        div()
+                            .class(if is_backuping_val {
+                                "progress-fill"
+                            } else {
+                                "progress-fill complete"
+                            })
+                            .w(100.0),
+                    ),
+                ),
+        )
+        .child(
+            div()
                 .id("start-backup-btn")
                 .on_click({
                     let serial_state = selected_serial.clone();
                     let apk_state = backup_apk.clone();
                     let compress_state = backup_compress.clone();
                     let output_state = backup_output.clone();
-                    let error_state = error_msg.clone();
+                    let backup_error = backup_error.clone();
+                    let is_backuping = is_backuping.clone();
+                    let backup_success = backup_success.clone();
                     move |_ctx| {
                         let serial = serial_state.get();
                         if serial.is_none() {
-                            error_state.set(Some("Please select a device first".to_string()));
+                            backup_error.set(Some("Please select a device first".to_string()));
                             return;
                         }
                         let serial = serial.unwrap();
@@ -565,31 +624,45 @@ fn build_ui(ctx: &mut WindowedContext) -> impl ElementBuilder {
                         let compress = compress_state.get();
                         let output = output_state.get();
 
-                        error_state.set(None);
+                        backup_error.set(None);
+                        is_backuping.set(true);
 
-                        let options = crate::adb::BackupOptions {
-                            all: true,
-                            apk,
-                            compress,
-                            password: None,
-                        };
+                        let backup_error_inner = backup_error.clone();
+                        let is_backuping_inner = is_backuping.clone();
+                        let backup_success_inner = backup_success.clone();
 
-                        match BackupManager::with_serial(serial.clone()) {
-                            Ok(manager) => match manager.create_backup(&output, &options) {
-                                Ok(_) => {
-                                    println!("Backup completed successfully");
-                                }
+                        std::thread::spawn(move || {
+                            let options = crate::adb::BackupOptions {
+                                all: true,
+                                apk,
+                                compress,
+                                password: None,
+                            };
+
+                            match BackupManager::with_serial(serial.clone()) {
+                                Ok(manager) => match manager.create_backup(&output, &options) {
+                                    Ok(_) => {
+                                        is_backuping_inner.set(false);
+                                        backup_success_inner.set(true);
+                                    }
+                                    Err(e) => {
+                                        is_backuping_inner.set(false);
+                                        backup_error_inner.set(Some(e.to_string()));
+                                    }
+                                },
                                 Err(e) => {
-                                    error_state.set(Some(e.to_string()));
+                                    is_backuping_inner.set(false);
+                                    backup_error_inner.set(Some(e.to_string()));
                                 }
-                            },
-                            Err(e) => {
-                                error_state.set(Some(e.to_string()));
                             }
-                        }
+                        });
                     }
                 })
-                .child(text("Start Backup")),
+                .child(text(if is_backuping_val {
+                    "Backing up..."
+                } else {
+                    "Start Backup"
+                })),
         );
 
     let selected = selected_backup.get();
@@ -702,6 +775,27 @@ fn build_ui(ctx: &mut WindowedContext) -> impl ElementBuilder {
         )
         .child(
             div()
+                .class("progress-container")
+                .flex_col()
+                .child(div().class("progress-label").child(text(if restoring {
+                    "Restoring..."
+                } else {
+                    "Ready to restore"
+                })))
+                .child(
+                    div().class("progress-bar").child(
+                        div()
+                            .class(if restoring {
+                                "progress-fill"
+                            } else {
+                                "progress-fill complete"
+                            })
+                            .w(100.0),
+                    ),
+                ),
+        )
+        .child(
+            div()
                 .id("start-restore-btn")
                 .on_click({
                     let selected = selected_backup.clone();
@@ -728,22 +822,28 @@ fn build_ui(ctx: &mut WindowedContext) -> impl ElementBuilder {
                         is_restoring.set(true);
                         restore_error.set(None);
 
-                        match RestoreManager::with_serial(serial.clone()) {
-                            Ok(manager) => match manager.restore(&backup_path, None) {
-                                Ok(_) => {
-                                    is_restoring.set(false);
-                                    restore_success.set(true);
-                                }
+                        let is_restoring_inner = is_restoring.clone();
+                        let restore_success_inner = restore_success.clone();
+                        let restore_error_inner = restore_error.clone();
+
+                        std::thread::spawn(move || {
+                            match RestoreManager::with_serial(serial.clone()) {
+                                Ok(manager) => match manager.restore(&backup_path, None) {
+                                    Ok(_) => {
+                                        is_restoring_inner.set(false);
+                                        restore_success_inner.set(true);
+                                    }
+                                    Err(e) => {
+                                        is_restoring_inner.set(false);
+                                        restore_error_inner.set(Some(e.to_string()));
+                                    }
+                                },
                                 Err(e) => {
-                                    is_restoring.set(false);
-                                    restore_error.set(Some(e.to_string()));
+                                    is_restoring_inner.set(false);
+                                    restore_error_inner.set(Some(e.to_string()));
                                 }
-                            },
-                            Err(e) => {
-                                is_restoring.set(false);
-                                restore_error.set(Some(e.to_string()));
                             }
-                        }
+                        });
                     }
                 })
                 .child(text(if restoring {
