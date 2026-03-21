@@ -48,6 +48,21 @@
 
 ---
 
+## Completed
+
+### Blinc UI Development
+
+All features implemented:
+
+- [x] Blinc UI framework integration
+- [x] Main window with navigation
+- [x] Device selector view
+- [x] Backup configuration view
+- [x] Restore browser view
+- [x] Progress indicators
+
+---
+
 ## Incomplete / TODO
 
 ### ADB Integration (Todo)
@@ -63,6 +78,7 @@
 - [ ] Backup password prompt (interactive)
 - [ ] Backup rotation/management
 - [ ] Estimate backup size before execution
+- [x] Backup configuration UI (Blinc)
 
 ### Restore Operations (Todo)
 
@@ -73,9 +89,10 @@
 ### CLI Features
 
 - [x] Blinc UI framework integration
-- [ ] Interactive device selector (UI)
-- [ ] Backup browser UI (Blinc)
-- [ ] Configuration file support
+- [x] Interactive device selector (UI)
+- [x] Backup browser UI (Blinc)
+- [x] Restore browser UI (Blinc)
+- [x] Configuration file support
 - [ ] Environment variable config
 
 ### Error Handling
@@ -86,13 +103,13 @@
 
 ### Testing
 
-- [ ] Unit tests for parsing functions
+- [x] Unit tests for parsing functions
 - [ ] Integration tests for ADB commands
 - [ ] Mock ADB for testing
 
 ### Documentation
 
-- [ ] README.md
+- [x] README.md
 - [ ] Man page
 - [ ] CLI documentation
 
@@ -103,15 +120,29 @@
 ### Blinc UI Development
 
 - [x] Blinc UI framework integration
-- [ ] Main window with navigation
-- [ ] Device selector view
-- [ ] Backup configuration view
-- [ ] Restore browser view
-- [ ] Progress indicators
+- [x] Main window with navigation
+- [x] Device selector view
+- [x] Backup configuration view
+- [x] Restore browser view
+- [x] Progress indicators
 
 ---
 
 ## Known Issues
 
 - Backup encryption not fully integrated
-- No progress bar for long-running operations
+- No real-time progress bar for long-running operations (ADB doesn't provide progress callbacks)
+- macOS ARM64 (Apple Silicon) not supported for Blinc UI due to GPU framework limitations
+
+## Recent Commits on feat/blinc-ui-main-window
+
+- feat: add blinc-ui main window scaffolding
+- feat: implement main window with navigation sidebar
+- feat: implement device selector view in UI
+- feat: add backup configuration view to UI
+- feat: add restore browser view to UI
+- feat: add progress indicators to backup and restore views
+- fix: hide error banner when no error
+- docs: add graphical UI section to README
+- feat: add configuration file support
+- test: add unit tests for ADB device line parsing

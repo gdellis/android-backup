@@ -5,6 +5,7 @@ A fast, reliable command-line tool for backing up and restoring Android devices 
 ## Features
 
 - **Full Backup & Restore** — Create complete backups of your Android device data via ADB
+- **Graphical UI** — Modern desktop interface with Blinc framework (optional)
 - **AES-256-GCM Encryption** — Secure your backups with strong encryption
 - **APK Inclusion** — Optionally include installed APKs in your backups
 - **Multi-Device Support** — Work with multiple devices using serial numbers
@@ -143,6 +144,26 @@ Verify backup file integrity.
 ```bash
 android-backup verify <BACKUP_FILE>
 ```
+
+## Graphical UI
+
+Android Backup Tool includes an optional graphical user interface built with [Blinc](https://github.com/nickel-lang/blinc):
+
+```bash
+cargo run --features blinc-ui -- ui
+```
+
+The UI provides:
+
+- **Devices View** — Connect and manage Android devices with USB debugging
+- **Backup View** — Configure and run backups with options for APKs and compression
+- **Restore View** — Browse local backups and restore to your device
+- **Progress Indicators** — Visual feedback during backup and restore operations
+
+### UI Requirements
+
+- Linux (with GPU support) or Windows
+- Note: macOS ARM64 (Apple Silicon) is not currently supported due to Blinc framework limitations
 
 ## How It Works
 
