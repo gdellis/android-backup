@@ -1,6 +1,7 @@
 mod adb;
 mod backup;
 mod cli;
+mod config;
 mod crypto;
 mod device;
 mod error;
@@ -189,6 +190,50 @@ fn handle_ui() -> anyhow::Result<()> {
     anyhow::bail!("UI support not enabled. Rebuild with --features blinc-ui")
 }
 
+fn handle_config(cli_config: &Option<cli::ConfigCommands>) -> anyhow::Result<()> {
+    let config = crate::config::Config::load()?;
+
+    match cli_config {
+        Some(cli::ConfigCommands::Show) => {
+            println!("Current configuration:");
+            println!("  ADB path: {:?}", config.adb_path);
+            println!("  Backup directory: {:?}", config.backup_directory);
+            println!("  Default APK inclusion: {}", config.default_apk);
+            println!("  Default compression: {}", config.default_compress);
+            println!("  Verbose: {}", config.verbose);
+            println!();
+            println!("Config file: {:?}", crate::config::get_config_path()?);
+        }
+        Some(cli::ConfigCommands::Set {
+            adb_path,
+            backup_dir,
+            default_apk,
+            default_compress,
+        }) => {
+            let mut config = config;
+            if let Some(path) = adb_path {
+                config.adb_path = Some(path.clone());
+            }
+            if let Some(dir) = backup_dir {
+                config.backup_directory = Some(dir.clone());
+            }
+            if let Some(apk) = default_apk {
+                config.default_apk = *apk;
+            }
+            if let Some(compress) = default_compress {
+                config.default_compress = *compress;
+            }
+            config.save()?;
+            println!("Configuration saved.");
+        }
+        None => {
+            println!("Usage: android-backup config [show|set]");
+        }
+    }
+
+    Ok(())
+}
+
 fn main() {
     let cli = Cli::parse_args();
     init_logging(cli.verbose);
@@ -217,6 +262,7 @@ fn main() {
             Ok(())
         }
         cli::Commands::Ui => handle_ui(),
+        cli::Commands::Config { command } => handle_config(command),
     };
 
     if let Err(e) = result {

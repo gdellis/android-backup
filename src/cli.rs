@@ -66,6 +66,25 @@ pub enum Commands {
         install_dir: Option<PathBuf>,
     },
     Ui,
+    Config {
+        #[command(subcommand)]
+        command: Option<ConfigCommands>,
+    },
+}
+
+#[derive(Subcommand, Debug)]
+pub enum ConfigCommands {
+    Show,
+    Set {
+        #[arg(long, help = "Set ADB path")]
+        adb_path: Option<String>,
+        #[arg(long, help = "Set backup directory")]
+        backup_dir: Option<String>,
+        #[arg(long, help = "Default include APKs")]
+        default_apk: Option<bool>,
+        #[arg(long, help = "Default compress")]
+        default_compress: Option<bool>,
+    },
 }
 
 impl Cli {
