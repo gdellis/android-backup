@@ -63,6 +63,7 @@
 - [ ] Backup password prompt (interactive)
 - [ ] Backup rotation/management
 - [ ] Estimate backup size before execution
+- [x] Backup configuration UI (Blinc)
 
 ### Restore Operations (Todo)
 
@@ -74,7 +75,7 @@
 
 - [x] Blinc UI framework integration
 - [x] Interactive device selector (UI)
-- [ ] Backup browser UI (Blinc)
+- [x] Backup browser UI (Blinc)
 - [ ] Configuration file support
 - [ ] Environment variable config
 
@@ -105,7 +106,7 @@
 - [x] Blinc UI framework integration
 - [x] Main window with navigation
 - [x] Device selector view
-- [ ] Backup configuration view
+- [x] Backup configuration view
 - [ ] Restore browser view
 - [ ] Progress indicators
 
