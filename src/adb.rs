@@ -252,3 +252,74 @@ impl Default for AdbCommand {
         Self::new().expect("ADB not found")
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_parse_device_line_valid_device() {
+        let line = "192.168.1.100:5555    device product:GT-N8010 model:GT_N8010 device:tuna";
+        let device = parse_device_line(line);
+
+        assert!(device.is_some());
+        let device = device.unwrap();
+        assert_eq!(device.serial, "192.168.1.100:5555");
+        assert_eq!(device.state, DeviceState::Device);
+        assert_eq!(device.model, Some("GT_N8010".to_string()));
+        assert_eq!(device.product, Some("GT-N8010".to_string()));
+    }
+
+    #[test]
+    fn test_parse_device_line_unauthorized() {
+        let line = "192.168.1.100:5555    unauthorized";
+        let device = parse_device_line(line);
+
+        assert!(device.is_some());
+        let device = device.unwrap();
+        assert_eq!(device.serial, "192.168.1.100:5555");
+        assert_eq!(device.state, DeviceState::Unauthorized);
+        assert_eq!(device.model, None);
+    }
+
+    #[test]
+    fn test_parse_device_line_offline() {
+        let line = "192.168.1.100:5555    offline";
+        let device = parse_device_line(line);
+
+        assert!(device.is_some());
+        let device = device.unwrap();
+        assert_eq!(device.serial, "192.168.1.100:5555");
+        assert_eq!(device.state, DeviceState::Offline);
+    }
+
+    #[test]
+    fn test_parse_device_line_invalid() {
+        assert!(parse_device_line("").is_none());
+        assert!(parse_device_line("onlyone").is_none());
+        assert!(parse_device_line("serial unknown_state").is_none());
+        let result = parse_device_line("serial device model:foo");
+        assert!(result.is_some());
+    }
+
+    #[test]
+    fn test_parse_device_line_with_transport_id() {
+        let line = "12345678        device product:sdk_phone_x86_64 model:sdk_phone_x86_64 device:sdk_phone_x86_64 transport_id:1";
+        let device = parse_device_line(line);
+
+        assert!(device.is_some());
+        let device = device.unwrap();
+        assert_eq!(device.serial, "12345678");
+        assert_eq!(device.state, DeviceState::Device);
+        assert_eq!(device.transport_id, Some("1".to_string()));
+    }
+
+    #[test]
+    fn test_backup_options_default() {
+        let options = BackupOptions::default();
+        assert!(options.all);
+        assert!(!options.apk);
+        assert!(options.compress);
+        assert_eq!(options.password, None);
+    }
+}
