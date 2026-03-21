@@ -1,8 +1,10 @@
 use crate::adb::{AdbDevice, DeviceState};
+use crate::backup::BackupManager;
 use crate::device::DeviceManager;
 use blinc_app::prelude::*;
 use blinc_app::windowed::{WindowedApp, WindowedContext};
 use blinc_core::Color;
+use std::path::PathBuf;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub enum NavItem {
@@ -31,6 +33,10 @@ fn build_ui(ctx: &mut WindowedContext) -> impl ElementBuilder {
     let selected_serial = ctx.use_state_keyed::<Option<String>, _>("selected_serial", || None);
     let is_loading = ctx.use_state_keyed("is_loading", || false);
     let error_msg = ctx.use_state_keyed::<Option<String>, _>("error_msg", || None);
+
+    let backup_apk = ctx.use_state_keyed("backup_apk", || false);
+    let backup_compress = ctx.use_state_keyed("backup_compress", || true);
+    let backup_output = ctx.use_state_keyed("backup_output", get_default_backup_dir);
 
     static CSS_LOADED: std::sync::OnceLock<()> = std::sync::OnceLock::new();
 
@@ -140,24 +146,108 @@ fn build_ui(ctx: &mut WindowedContext) -> impl ElementBuilder {
                 border-color: #3b82f6;
                 background: #1e3a5f;
             }
-            #empty-state {
-                display: flex;
-                flex-direction: column;
-                align-items: center;
-                justify-content: center;
-                flex: 1;
-                gap: 16px;
-                color: #64748b;
-            }
-            #empty-icon {
-                font-size: 64px;
-            }
             #error-banner {
                 background: #7f1d1d;
                 color: #fca5a5;
                 padding: 12px 16px;
                 border-radius: 8px;
                 font-size: 14px;
+            }
+            #backup-view {
+                width: 100%;
+                height: 100%;
+                display: flex;
+                flex-direction: column;
+                padding: 24px;
+                gap: 24px;
+                overflow-y: auto;
+            }
+            #backup-header {
+                display: flex;
+                flex-direction: column;
+                gap: 8px;
+            }
+            #backup-title {
+                font-size: 24px;
+                font-weight: 700;
+                color: #f8fafc;
+            }
+            #backup-subtitle {
+                font-size: 14px;
+                color: #64748b;
+            }
+            .config-section {
+                background: #1e293b;
+                border-radius: 12px;
+                padding: 20px;
+                display: flex;
+                flex-direction: column;
+                gap: 16px;
+            }
+            .section-title {
+                font-size: 16px;
+                font-weight: 600;
+                color: #f8fafc;
+            }
+            .config-row {
+                display: flex;
+                flex-direction: row;
+                align-items: center;
+                justify-content: space-between;
+            }
+            .config-label {
+                font-size: 14px;
+                color: #e2e8f0;
+            }
+            .config-desc {
+                font-size: 12px;
+                color: #64748b;
+                margin-top: 4px;
+            }
+            .toggle {
+                width: 48px;
+                height: 24px;
+                background: #475569;
+                border-radius: 12px;
+                cursor: pointer;
+                position: relative;
+            }
+            .toggle.active {
+                background: #3b82f6;
+            }
+            .toggle-knob {
+                width: 20px;
+                height: 20px;
+                background: white;
+                border-radius: 50%;
+                position: absolute;
+                top: 2px;
+                left: 2px;
+                transition: left 150ms ease;
+            }
+            .toggle.active .toggle-knob {
+                left: 26px;
+            }
+            #start-backup-btn {
+                padding: 14px 24px;
+                background: #3b82f6;
+                border-radius: 8px;
+                color: white;
+                font-size: 16px;
+                font-weight: 600;
+                cursor: pointer;
+                text-align: center;
+            }
+            #start-backup-btn:hover {
+                background: #2563eb;
+            }
+            .placeholder-card {
+                background: #334155;
+                border-radius: 8px;
+                padding: 12px 16px;
+                color: #94a3b8;
+                font-size: 14px;
+                text-align: center;
             }
             "#,
         );
@@ -212,16 +302,19 @@ fn build_ui(ctx: &mut WindowedContext) -> impl ElementBuilder {
     let error = error_msg.get();
     let device_list = devices.get();
     let selected = selected_serial.get();
+    let apk = backup_apk.get();
+    let compress = backup_compress.get();
+    let output_dir = backup_output.get();
 
     let mut device_cards = div().id("device-list").flex_col();
-    for device in device_list {
+    for device in &device_list {
         let is_selected = selected.as_deref() == Some(&device.serial);
         let serial = device.serial.clone();
         let model = device
             .model
             .clone()
             .unwrap_or_else(|| "Unknown".to_string());
-        let state = device.state;
+        let state = device.state.clone();
         let serial_clone = serial.clone();
         let selected_serial_clone = selected_serial.clone();
 
@@ -247,58 +340,194 @@ fn build_ui(ctx: &mut WindowedContext) -> impl ElementBuilder {
         );
     }
 
+    let devices_content = div()
+        .id("devices-view")
+        .flex_col()
+        .child(
+            div()
+                .id("devices-header")
+                .flex_row()
+                .child(text("Connected Devices").id("devices-title"))
+                .child(
+                    div()
+                        .id("refresh-btn")
+                        .on_click(move |_ctx| refresh_click())
+                        .child(text(if loading { "Loading..." } else { "Refresh" })),
+                ),
+        )
+        .child(
+            div()
+                .id("error-banner")
+                .child(text(error.as_deref().unwrap_or("Unknown error"))),
+        )
+        .child(device_cards);
+
+    let selected_device_info = if let Some(ref s) = selected {
+        let model = device_list
+            .iter()
+            .find(|d| &d.serial == s)
+            .and_then(|d| d.model.clone())
+            .unwrap_or_else(|| "Unknown".to_string());
+        div()
+            .flex_col()
+            .child(text("📱 ".to_owned() + &model))
+            .child(text(s).color(Color::rgb(0.4, 0.4, 0.4)))
+    } else {
+        div()
+            .class("placeholder-card")
+            .child(text("No device selected. Go to Devices to select one."))
+    };
+
+    let backup_content = div()
+        .id("backup-view")
+        .flex_col()
+        .child(
+            div()
+                .id("backup-header")
+                .child(text("Create Backup").id("backup-title"))
+                .child(
+                    text("Configure and start a backup of your Android device")
+                        .id("backup-subtitle"),
+                ),
+        )
+        .child(
+            div()
+                .class("config-section")
+                .flex_col()
+                .child(div().child(text("Device")))
+                .child(selected_device_info),
+        )
+        .child(
+            div()
+                .class("config-section")
+                .flex_col()
+                .child(div().child(text("Output")))
+                .child(text(&output_dir).color(Color::rgb(0.4, 0.4, 0.4))),
+        )
+        .child(
+            div()
+                .class("config-section")
+                .flex_col()
+                .child(div().child(text("Options")))
+                .child(
+                    div()
+                        .class("config-row")
+                        .child(
+                            div()
+                                .flex_col()
+                                .child(text("Include APKs"))
+                                .child(text("Backup APK files for installed apps")),
+                        )
+                        .child(
+                            div()
+                                .class(if apk { "toggle active" } else { "toggle" })
+                                .on_click({
+                                    let apk_state = backup_apk.clone();
+                                    move |_ctx| {
+                                        let new_val = !apk_state.get();
+                                        apk_state.set(new_val);
+                                    }
+                                })
+                                .child(div().class("toggle-knob")),
+                        ),
+                )
+                .child(
+                    div()
+                        .class("config-row")
+                        .child(
+                            div()
+                                .flex_col()
+                                .child(text("Compress"))
+                                .child(text("Compress backup data")),
+                        )
+                        .child(
+                            div()
+                                .class(if compress { "toggle active" } else { "toggle" })
+                                .on_click({
+                                    let compress_state = backup_compress.clone();
+                                    move |_ctx| {
+                                        let new_val = !compress_state.get();
+                                        compress_state.set(new_val);
+                                    }
+                                })
+                                .child(div().class("toggle-knob")),
+                        ),
+                ),
+        )
+        .child(
+            div()
+                .id("start-backup-btn")
+                .on_click({
+                    let serial_state = selected_serial.clone();
+                    let apk_state = backup_apk.clone();
+                    let compress_state = backup_compress.clone();
+                    let output_state = backup_output.clone();
+                    let error_state = error_msg.clone();
+                    move |_ctx| {
+                        let serial = serial_state.get();
+                        if serial.is_none() {
+                            error_state.set(Some("Please select a device first".to_string()));
+                            return;
+                        }
+                        let serial = serial.unwrap();
+                        let apk = apk_state.get();
+                        let compress = compress_state.get();
+                        let output = output_state.get();
+
+                        error_state.set(None);
+
+                        let options = crate::adb::BackupOptions {
+                            all: true,
+                            apk,
+                            compress,
+                            password: None,
+                        };
+
+                        match BackupManager::with_serial(serial.clone()) {
+                            Ok(manager) => match manager.create_backup(&output, &options) {
+                                Ok(_) => {
+                                    println!("Backup completed successfully");
+                                }
+                                Err(e) => {
+                                    error_state.set(Some(e.to_string()));
+                                }
+                            },
+                            Err(e) => {
+                                error_state.set(Some(e.to_string()));
+                            }
+                        }
+                    }
+                })
+                .child(text("Start Backup")),
+        );
+
+    let restore_content = div()
+        .flex_col()
+        .items_center()
+        .justify_center()
+        .child(text("🔄 Restore View").size(24.0).color(Color::WHITE))
+        .child(
+            text("Restore from backup files")
+                .size(14.0)
+                .color(Color::rgb(0.5, 0.5, 0.5)),
+        );
+
+    let settings_content = div()
+        .flex_col()
+        .items_center()
+        .justify_center()
+        .child(text("⚙️ Settings View").size(24.0).color(Color::WHITE))
+        .child(
+            text("Configure application settings")
+                .size(14.0)
+                .color(Color::rgb(0.5, 0.5, 0.5)),
+        );
+
     let content = match current {
-        NavItem::Devices => div()
-            .id("devices-view")
-            .flex_col()
-            .child(
-                div()
-                    .id("devices-header")
-                    .flex_row()
-                    .child(text("Connected Devices").id("devices-title"))
-                    .child(
-                        div()
-                            .id("refresh-btn")
-                            .on_click(move |_ctx| refresh_click())
-                            .child(text(if loading { "Loading..." } else { "Refresh" })),
-                    ),
-            )
-            .child(
-                div()
-                    .id("error-banner")
-                    .child(text(error.as_deref().unwrap_or("Unknown error"))),
-            )
-            .child(device_cards),
-        NavItem::Backup => div()
-            .flex_col()
-            .items_center()
-            .justify_center()
-            .child(text("💾 Backup View").size(24.0).color(Color::WHITE))
-            .child(
-                text("Configure and run backups")
-                    .size(14.0)
-                    .color(Color::rgb(0.5, 0.5, 0.5)),
-            ),
-        NavItem::Restore => div()
-            .flex_col()
-            .items_center()
-            .justify_center()
-            .child(text("🔄 Restore View").size(24.0).color(Color::WHITE))
-            .child(
-                text("Restore from backup files")
-                    .size(14.0)
-                    .color(Color::rgb(0.5, 0.5, 0.5)),
-            ),
-        NavItem::Settings => div()
-            .flex_col()
-            .items_center()
-            .justify_center()
-            .child(text("⚙️ Settings View").size(24.0).color(Color::WHITE))
-            .child(
-                text("Configure application settings")
-                    .size(14.0)
-                    .color(Color::rgb(0.5, 0.5, 0.5)),
-            ),
+        NavItem::Devices => devices_content,
+        NavItem::Backup => backup_content,
+        NavItem::Restore => restore_content,
+        NavItem::Settings => settings_content,
     };
 
     div()
@@ -351,4 +580,13 @@ fn nav_button(
         })
         .on_click(move |_ctx| on_click())
         .child(text(label))
+}
+
+fn get_default_backup_dir() -> String {
+    dirs::data_local_dir()
+        .unwrap_or_else(|| PathBuf::from("."))
+        .join("android-backup")
+        .join("backups")
+        .to_string_lossy()
+        .to_string()
 }

@@ -73,7 +73,7 @@
 ### CLI Features
 
 - [x] Blinc UI framework integration
-- [ ] Interactive device selector (UI)
+- [x] Interactive device selector (UI)
 - [ ] Backup browser UI (Blinc)
 - [ ] Configuration file support
 - [ ] Environment variable config
